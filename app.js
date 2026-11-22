@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 // Older cached pages can briefly receive a newer script during deployment.
 // Recover through the normal app update before touching newer view elements.
-if(!$('word-flip')){
+if(!$('word-flip')||!$('word-circular')){
   const message=$('words');message.hidden=false;message.style.fontSize='24px';message.textContent='Updating Word Clock…';
   if($('letter-grid'))$('letter-grid').hidden=true;
   window.addEventListener('load',async()=>{try{
@@ -20,15 +20,22 @@ if(!$('word-flip')){
 const colors={white:'#ffffff',amber:'#ffc36b',mint:'#99e2bb',blue:'#9bcaff',rose:'#f4acc8'};
 let preferences={seconds:true,color:'white',dim:43,awake:false,layout:'block'};
 try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved){if(typeof saved.seconds==='boolean')preferences.seconds=saved.seconds;if(colors[saved.color])preferences.color=saved.color;if(Number.isFinite(saved.dim))preferences.dim=Math.min(65,Math.max(25,saved.dim));if(typeof saved.awake==='boolean')preferences.awake=saved.awake;}}catch{}
-try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved&&['block','grid','flip'].includes(saved.layout))preferences.layout=saved.layout;}catch{}
+try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved&&['block','grid','flip','circular'].includes(saved.layout))preferences.layout=saved.layout;}catch{}
 let nodes=new Map(),gridNodes=[],lastPhrase='',wakeLock=null,installPrompt=null,registration=null,fitFrame=0;
 let flipDisplay=null,lastFlipTick=0;
+let circularDisplay=null,lastCircularTick=0;
 function status(message){$('status').textContent=message;}
 function save(){try{localStorage.setItem('word-clock.preferences',JSON.stringify(preferences));}catch{status('Preferences could not be saved in this browser.');}}
 function fit(){
   cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{
     const stage=$('stage'),words=$('words'),style=getComputedStyle(stage);
     const available=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+    if(preferences.layout==='circular'){
+      const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),panel=$('word-circular');
+      const size=Math.max(1,Math.min(width,available-88,960));
+      panel.style.width=Math.min(width,1000)+'px';panel.style.setProperty('--dial-size',size+'px');
+      return;
+    }
     if(preferences.layout==='flip'){
       const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
       const count=preferences.seconds?3:2,stacked=width<available*1.1,gap=20;
@@ -50,6 +57,11 @@ function fit(){
   });
 }
 function tick(){
+  if(preferences.layout==='circular'){
+    const now=new Date(),time=CircularClock.time(now.getHours(),now.getMinutes(),now.getSeconds(),preferences.seconds),stamp=now.getTime();
+    circularDisplay.update(time,lastCircularTick!==0&&stamp-lastCircularTick<1500);lastCircularTick=stamp;
+    $('readable').textContent='It is '+time.phrase+'.';return;
+  }
   if(preferences.layout==='flip'){
     const now=new Date(),time=WordFlip.time(now.getHours(),now.getMinutes(),now.getSeconds(),preferences.seconds);
     const stamp=now.getTime();flipDisplay.update(time,lastFlipTick!==0&&stamp-lastFlipTick<1500);lastFlipTick=stamp;
@@ -73,11 +85,14 @@ function render(){
   $('seconds').checked=preferences.seconds;$('color').value=preferences.color;$('dim').value=preferences.dim;$('awake').checked=preferences.awake;
   const grid=preferences.layout==='grid';
   const flip=preferences.layout==='flip';
+  const circular=preferences.layout==='circular';
   if(flipDisplay){flipDisplay.destroy();flipDisplay=null;}lastFlipTick=0;
-  $('layout').value=preferences.layout;$('words').hidden=grid||flip;$('letter-grid').hidden=!grid;$('word-flip').hidden=!flip;$('grid-help').hidden=!grid;$('seconds').disabled=grid;
-  $('seconds-help').textContent=grid?'Used in Word Block and Word Flip. Letter Grid shows minutes.':flip?'Show a third flip panel for seconds':'Update the highlighted time every second';
+  if(circularDisplay){circularDisplay.destroy();circularDisplay=null;}lastCircularTick=0;
+  $('layout').value=preferences.layout;$('words').hidden=grid||flip||circular;$('letter-grid').hidden=!grid;$('word-flip').hidden=!flip;$('word-circular').hidden=!circular;$('grid-help').hidden=!grid;$('seconds').disabled=grid;
+  $('seconds-help').textContent=grid?'Used in the other layouts. Letter Grid shows minutes.':flip?'Show a third flip panel for seconds':circular?'Show a third rotating ring for seconds':'Update the highlighted time every second';
   $('dim').disabled=flip;$('brightness-help').hidden=!flip;
   if(flip){flipDisplay=WordFlip.create($('word-flip'),preferences.seconds);tick();fit();return;}
+  if(circular){circularDisplay=CircularClock.create($('word-circular'),preferences.seconds);tick();fit();return;}
   if(grid){
     const fragment=document.createDocumentFragment();gridNodes=[];
     for(const letter of LetterGrid.rows.join('')){const cell=document.createElement('span');cell.textContent=letter;gridNodes.push(cell);fragment.append(cell);}
