@@ -32,8 +32,8 @@ function fit(){
     const available=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
     if(preferences.layout==='circular'){
       const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),panel=$('word-circular');
-      const size=Math.max(1,Math.min(width,available-88,960));
-      panel.style.width=Math.min(width,1000)+'px';panel.style.setProperty('--dial-size',size+'px');
+      panel.style.width=width+'px';panel.style.height=Math.max(1,available)+'px';
+      circularDisplay.resize(width,available);
       return;
     }
     if(preferences.layout==='flip'){

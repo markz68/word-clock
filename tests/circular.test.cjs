@@ -24,6 +24,7 @@ for(const count of [12,60]){
 class Node{
   constructor(){this.children=[];this.style={};this.attributes={};this.classes=new Set();this.classList={add:n=>this.classes.add(n),remove:n=>this.classes.delete(n)};}
   setAttribute(k,v){this.attributes[k]=v;}
+  getComputedTextLength(){return (this.textContent||'').length*12;}
   append(...nodes){this.children.push(...nodes);}
   replaceChildren(...nodes){this.children=nodes;}
 }
@@ -35,7 +36,19 @@ const second=container.children[0].children[3];assert.equal(second.style.transfo
 display.update(circle.time(0,0,0));assert.equal(second.style.transform,'rotate(-360deg)');
 assert(second.children[0].children[0].classes.has('lit'));
 assert(!second.children[59].children[0].classes.has('lit'));
-assert.equal(container.children[1].textContent,'twelve o’clock precisely');
+const focused=container.children[0].children[4].children;
+assert.equal(focused.map(node=>node.textContent).join(' '),'twelve o’clock precisely');
+assert.equal(container.children.length,1,'No duplicate caption below the rings');
+display.resize(360,640);
+const viewbox=container.children[0].attributes.viewBox.split(' ').map(Number);
+assert.equal(viewbox[0],65,'Left portion of the circles is cropped');
+assert(Math.abs(viewbox[3]/viewbox[2]-640/360)<1e-9,'Frame follows the viewport aspect ratio');
+const before=container.children[0].attributes.viewBox;
+for(let second=1;second<60;second++){
+  display.update(circle.time(0,0,second));
+  assert.equal(container.children[0].attributes.viewBox,before,'Seconds do not change zoom');
+  const last=focused[2];assert(Number(last.attributes.x)+last.getComputedTextLength()<viewbox[0]+viewbox[2],'Longest second remains visible');
+}
 reduced=true;display.update(circle.time(0,0,1));assert.equal(second.style.transition,'none');
 display.destroy();assert.equal(container.children.length,0);
 console.log('Circular: all 172,800 time/settings combinations, ring rollovers, highlights, and reduced motion passed.');

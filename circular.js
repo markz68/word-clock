@@ -16,9 +16,8 @@
   function create(container,seconds){
     const ns='http://www.w3.org/2000/svg';
     const make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value]of Object.entries(attrs))node.setAttribute(key,value);return node;};
-    const extent=seconds?560:340;
-    const svg=make('svg',{viewBox:`${-extent} ${-extent} ${extent*2} ${extent*2}`,class:'circular-dial'});
-    const track=make('line',{x1:40,y1:0,x2:extent-10,y2:0,class:'circular-track'});svg.append(track);
+    const svg=make('svg',{class:'circular-dial'});
+    const track=make('line',{x1:40,y1:0,x2:600,y2:0,class:'circular-track'});svg.append(track);
     const rings=definitions(seconds).map(def=>{
       const group=make('g',{class:'circular-ring','data-ring':def.id});
       const labels=def.words.map((word,i)=>{
@@ -27,9 +26,22 @@
       });
       svg.append(group);return {...def,group,labels,angle:null,index:null};
     });
-    const caption=document.createElement('div');caption.className='circular-caption';
-    container.append(svg,caption);
+    // Keep the bright words stationary while the dim rings rotate behind them.
+    const focus=make('g',{class:'circular-focus'});
+    const focused=rings.map(ring=>{const label=make('text',{x:ring.radius,y:0,'dominant-baseline':'middle','data-focus':ring.id});focus.append(label);return label;});
+    svg.append(focus);container.append(svg);
+    const length=node=>Math.ceil(node.getComputedTextLength()*1.04);
+    const maxima=rings.map(ring=>Math.max(...ring.labels.map(length))*1.15);
+    let viewport={width:800,height:500},contentWidth=600,frameKey='';
+    function frame(){
+      // Crop the left and outer portions of the circles. The whole phrase stays
+      // inside the viewport, with enough room for the longest seconds value.
+      const width=Math.max(contentWidth,viewport.width/2.5);
+      const height=width*viewport.height/viewport.width;
+      svg.setAttribute('viewBox',`65 ${-height/2} ${width} ${height}`);
+    }
     return {
+      resize(width,height){viewport={width:Math.max(1,width),height:Math.max(1,height)};frame();},
       update(result,animate=true){
         rings.forEach((ring,i)=>{
           const index=result.indexes[i];if(index===ring.index)return;
@@ -39,7 +51,19 @@
           ring.group.style.transform=`rotate(${ring.angle}deg)`;
           if(ring.index!==null)ring.labels[ring.index].classList.remove('lit');ring.labels[index].classList.add('lit');ring.index=index;
         });
-        caption.textContent=result.phrase;
+        focused.forEach((label,i)=>{label.textContent=rings[i].words[result.indexes[i]];});
+        // Reframe only when the hour or minute changes, avoiding a zoom pulse
+        // with each new second. The outer slot reserves its longest word.
+        const key=result.indexes.slice(0,2).join(':');
+        if(key!==frameKey){
+          frameKey=key;let radius=110;
+          rings.forEach((ring,i)=>{
+            ring.labels.forEach(label=>label.setAttribute('x',radius));focused[i].setAttribute('x',radius);
+            radius+=i===rings.length-1&&seconds?maxima[i]:length(focused[i]);
+            radius+=12;
+          });
+          contentWidth=radius-65+24;frame();
+        }
       },
       destroy(){container.replaceChildren();}
     };
