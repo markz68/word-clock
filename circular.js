@@ -32,7 +32,8 @@
     svg.append(focus);container.append(svg);
     const length=node=>Math.ceil(node.getComputedTextLength()*1.04);
     const maxima=rings.map(ring=>Math.max(...ring.labels.map(length))*1.15);
-    let viewport={width:800,height:500},contentWidth=600,frameKey='';
+    const heights=rings.map(ring=>Math.max(...ring.labels.map(node=>node.getBBox().height)));
+    let viewport={width:800,height:500},contentWidth=600,framed=false;
     function frame(){
       // Crop the left and outer portions of the circles. The whole phrase stays
       // inside the viewport, with enough room for the longest seconds value.
@@ -52,15 +53,15 @@
           if(ring.index!==null)ring.labels[ring.index].classList.remove('lit');ring.labels[index].classList.add('lit');ring.index=index;
         });
         focused.forEach((label,i)=>{label.textContent=rings[i].words[result.indexes[i]];});
-        // Reframe only when the hour or minute changes, avoiding a zoom pulse
-        // with each new second. The outer slot reserves its longest word.
-        const key=result.indexes.slice(0,2).join(':');
-        if(key!==frameKey){
-          frameKey=key;let radius=110;
+        // Reserve an entire radial band for every ring's longest word, not
+        // just the current value. Also leave vertical room between spokes.
+        // Fixed spacing prevents short values such as "ten" collapsing a band.
+        if(!framed){
+          framed=true;let radius=110;
           rings.forEach((ring,i)=>{
+            radius=Math.max(radius,(heights[i]+6)/(2*Math.sin(Math.PI/ring.words.length)));
             ring.labels.forEach(label=>label.setAttribute('x',radius));focused[i].setAttribute('x',radius);
-            radius+=i===rings.length-1&&seconds?maxima[i]:length(focused[i]);
-            radius+=12;
+            radius+=maxima[i]+16;
           });
           contentWidth=radius-65+24;frame();
         }

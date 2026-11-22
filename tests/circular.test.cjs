@@ -25,6 +25,7 @@ class Node{
   constructor(){this.children=[];this.style={};this.attributes={};this.classes=new Set();this.classList={add:n=>this.classes.add(n),remove:n=>this.classes.delete(n)};}
   setAttribute(k,v){this.attributes[k]=v;}
   getComputedTextLength(){return (this.textContent||'').length*12;}
+  getBBox(){return {height:24};}
   append(...nodes){this.children.push(...nodes);}
   replaceChildren(...nodes){this.children=nodes;}
 }
@@ -44,6 +45,24 @@ const viewbox=container.children[0].attributes.viewBox.split(' ').map(Number);
 assert.equal(viewbox[0],65,'Left portion of the circles is cropped');
 assert(Math.abs(viewbox[3]/viewbox[2]-640/360)<1e-9,'Frame follows the viewport aspect ratio');
 const before=container.children[0].attributes.viewBox;
+const radii=focused.map(node=>Number(node.attributes.x));
+// Reproduce 2:09 -> 2:10, then inspect every minute. No short hour/minute
+// may collapse the bands needed by longer, dimmed words on the same ring.
+for(const minute of [9,10,...Array.from({length:60},(_,i)=>i)]){
+  display.update(circle.time(2,minute,15));
+  assert.deepEqual(focused.map(node=>Number(node.attributes.x)),radii,'Ring positions must not depend on the selected word');
+  assert.equal(container.children[0].attributes.viewBox,before,'Minute changes do not change the zoom');
+}
+for(let i=0;i<3;i++){
+  const labels=container.children[0].children[i+1].children.map(spoke=>spoke.children[0]);
+  const radius=radii[i];
+  assert(2*radius*Math.sin(Math.PI/labels.length)>=30-1e-9,'Adjacent spokes have enough text-height clearance');
+  if(i<2)for(const label of labels){
+    const outer=Math.hypot(radius+label.getComputedTextLength(),12);
+    assert(outer<radii[i+1],'Dim words must remain inside their own radial band');
+  }
+}
+display.update(circle.time(0,0,0));
 for(let second=1;second<60;second++){
   display.update(circle.time(0,0,second));
   assert.equal(container.children[0].attributes.viewBox,before,'Seconds do not change zoom');
