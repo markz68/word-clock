@@ -34,3 +34,6 @@ dialog{width:min(460px,calc(100% - 28px));max-height:calc(100dvh - 28px);padding
 .circular-focus text{font-size:22px;font-weight:700;fill:var(--active)}
 .circular-track{stroke:none}
 @media(prefers-reduced-motion:reduce){.circular-ring{transition:none!important}}
+#word-conversational{flex:none;max-width:100%;color:var(--active);font-weight:700;letter-spacing:-.035em;text-align:center;line-height:1.12}
+.conversation-line{display:block;white-space:nowrap}
+.conversation-line+.conversation-line{margin-top:.08em}

@@ -1,12 +1,13 @@
 # Word Clock
 
-Version **1.3.2**. A responsive, installable word clock inspired by the flowing word layout in Simon Heys’s clock. Original implementation; no external fonts, libraries, or tracking.
+Version **1.4.0**. A responsive, installable word clock inspired by the flowing word layout in Simon Heys’s clock. Original implementation; no external fonts, libraries, or tracking.
 
 All words remain visible in gray; the current local time lights up. At 12:48:23 the highlighted words read “Twelve forty eight and twenty three seconds.” Noon and midnight both display Twelve. Single-digit minutes use “oh,” exact hours use “o’clock,” and zero seconds uses “precisely.”
 
 ## Features
 
-- Four layouts in Settings: **Word Block** (the original default), **Letter Grid**, **Word Flip**, and **Circular**. Layout, colors, and brightness are saved on this device.
+- Five layouts in Settings: **Word Block** (the original default), **Letter Grid**, **Word Flip**, **Circular**, and **Conversational**. Layout, colors, and brightness are saved on this device.
+- Conversational shows a large, centered phrase with **Casual** or **Exact** wording in Settings. Casual uses five-minute marks: for one minute after a mark, “just after”; for one to three minutes before the next mark, “nearly.” At 2:27 it reads “Nearly half past two.” Exact gives the current minute, such as “Twenty-three minutes past two” at 2:23; quarter and half phrases remain exact. Hour changes, noon, and midnight use the proper twelve-hour words. This is a calm, minute-only view with no animation or seconds. Your saved seconds preference is preserved for the other layouts. Highlight colors apply to the text; inactive-word brightness is disabled because this view has no inactive words.
 - Circular zooms into the current time across the middle of the screen, with most of the word rings cropped offscreen. Bright words remain horizontal and stationary as the dim rings rotate behind them; there is no duplicate caption below. Every ring reserves space for its longest word and enough height between adjacent spokes, preventing background words from overlapping when a short value such as “ten” is selected. Ring spacing and zoom remain steady across hour, minute, and second changes. The crop follows phone portrait, landscape, and monitor proportions. Hiding seconds removes the outer ring. Rings move in short steps, including when rolling from 59 to 0; reduced motion disables rotation animation. Zero seconds displays “precisely,” and other seconds include “and.” Colors and inactive-word brightness apply to this layout too.
 - Word Flip uses split-flap word panels for the hour, minute, and optional seconds. Turn **Show seconds** on or off for three or two panels. Panels stack in portrait and sit side by side in landscape, fitting the available space. Only changing values flip; the display catches up immediately after the app resumes. Device reduced-motion preferences disable the animation. At zero minutes the minute panel reads “o’clock”; single-digit minutes use “oh.” Highlight colors apply to the panel text; inactive-word brightness applies to the other layouts.
 - Letter Grid uses a fixed 11 × 10 face. Five-minute phrases light up; zero to four dots underneath add the remaining minutes. For example, at 1:47, “IT IS QUARTER TO TWO” and two dots light up. Dots always add minutes to the phrase, including “to” phrases. Noon and midnight use TWELVE.
@@ -44,3 +45,5 @@ Run `node tests/grid.test.cjs` to check the face spelling and all 1,440 minutes,
 Run `node tests/flip.test.cjs` to check all 172,800 time/seconds combinations and renderer transitions, interrupted flips, reduced motion, and cleanup.
 
 Run `node tests/circular.test.cjs` to check all 172,800 circular time/seconds combinations, ring rollover, highlighting, and reduced motion.
+
+Run `node tests/conversational.test.cjs` to decode and verify all 2,880 minute/wording combinations, including casual qualifiers and hour rollover.

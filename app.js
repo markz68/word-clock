@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 // Older cached pages can briefly receive a newer script during deployment.
 // Recover through the normal app update before touching newer view elements.
-if(!$('word-flip')||!$('word-circular')){
+if(!$('word-flip')||!$('word-circular')||!$('word-conversational')){
   const message=$('words');message.hidden=false;message.style.fontSize='24px';message.textContent='Updating Word Clock…';
   if($('letter-grid'))$('letter-grid').hidden=true;
   window.addEventListener('load',async()=>{try{
@@ -18,9 +18,9 @@ if(!$('word-flip')||!$('word-circular')){
 }
 
 const colors={white:'#ffffff',amber:'#ffc36b',mint:'#99e2bb',blue:'#9bcaff',rose:'#f4acc8'};
-let preferences={seconds:true,color:'white',dim:43,awake:false,layout:'block'};
+let preferences={seconds:true,color:'white',dim:43,awake:false,layout:'block',wording:'casual'};
 try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved){if(typeof saved.seconds==='boolean')preferences.seconds=saved.seconds;if(colors[saved.color])preferences.color=saved.color;if(Number.isFinite(saved.dim))preferences.dim=Math.min(65,Math.max(25,saved.dim));if(typeof saved.awake==='boolean')preferences.awake=saved.awake;}}catch{}
-try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved&&['block','grid','flip','circular'].includes(saved.layout))preferences.layout=saved.layout;}catch{}
+try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved){if(['block','grid','flip','circular','conversational'].includes(saved.layout))preferences.layout=saved.layout;if(['casual','exact'].includes(saved.wording))preferences.wording=saved.wording;}}catch{}
 let nodes=new Map(),gridNodes=[],lastPhrase='',wakeLock=null,installPrompt=null,registration=null,fitFrame=0;
 let flipDisplay=null,lastFlipTick=0;
 let circularDisplay=null,lastCircularTick=0;
@@ -30,6 +30,13 @@ function fit(){
   cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{
     const stage=$('stage'),words=$('words'),style=getComputedStyle(stage);
     const available=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+    if(preferences.layout==='conversational'){
+      const panel=$('word-conversational'),width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+      panel.style.width=Math.min(width,1100)+'px';
+      let low=1,high=180;
+      for(let i=0;i<13;i++){const mid=(low+high)/2;panel.style.fontSize=mid+'px';if(panel.getBoundingClientRect().height<=available&&panel.scrollWidth<=panel.clientWidth+1)low=mid;else high=mid;}
+      panel.style.fontSize=(Math.floor(low*10)/10)+'px';return;
+    }
     if(preferences.layout==='circular'){
       const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),panel=$('word-circular');
       panel.style.width=width+'px';panel.style.height=Math.max(1,available)+'px';
@@ -57,6 +64,13 @@ function fit(){
   });
 }
 function tick(){
+  if(preferences.layout==='conversational'){
+    const now=new Date(),time=ConversationalClock.time(now.getHours(),now.getMinutes(),preferences.wording);
+    const key=preferences.wording+':'+time.phrase;if(key===lastPhrase)return;lastPhrase=key;
+    const fragment=document.createDocumentFragment();
+    time.lines.forEach((line,i)=>{const node=document.createElement('span');node.className='conversation-line';node.textContent=i===0?line[0].toUpperCase()+line.slice(1):line;fragment.append(node);});
+    $('word-conversational').replaceChildren(fragment);$('readable').textContent='It is '+time.phrase+'.';fit();return;
+  }
   if(preferences.layout==='circular'){
     const now=new Date(),time=CircularClock.time(now.getHours(),now.getMinutes(),now.getSeconds(),preferences.seconds),stamp=now.getTime();
     circularDisplay.update(time,lastCircularTick!==0&&stamp-lastCircularTick<1500);lastCircularTick=stamp;
@@ -86,11 +100,14 @@ function render(){
   const grid=preferences.layout==='grid';
   const flip=preferences.layout==='flip';
   const circular=preferences.layout==='circular';
+  const conversational=preferences.layout==='conversational';
   if(flipDisplay){flipDisplay.destroy();flipDisplay=null;}lastFlipTick=0;
   if(circularDisplay){circularDisplay.destroy();circularDisplay=null;}lastCircularTick=0;
-  $('layout').value=preferences.layout;$('words').hidden=grid||flip||circular;$('letter-grid').hidden=!grid;$('word-flip').hidden=!flip;$('word-circular').hidden=!circular;$('grid-help').hidden=!grid;$('seconds').disabled=grid;
-  $('seconds-help').textContent=grid?'Used in the other layouts. Letter Grid shows minutes.':flip?'Show a third flip panel for seconds':circular?'Show a third rotating ring for seconds':'Update the highlighted time every second';
-  $('dim').disabled=flip;$('brightness-help').hidden=!flip;
+  $('layout').value=preferences.layout;$('words').hidden=grid||flip||circular||conversational;$('letter-grid').hidden=!grid;$('word-flip').hidden=!flip;$('word-circular').hidden=!circular;$('word-conversational').hidden=!conversational;$('grid-help').hidden=!grid;$('seconds').disabled=grid||conversational;
+  $('wording-row').hidden=!conversational;$('wording-help').hidden=!conversational;$('wording').value=preferences.wording;
+  $('seconds-help').textContent=grid?'Used in Word Block, Word Flip, and Circular. Letter Grid shows minutes.':conversational?'Conversational shows minutes. Your seconds choice is kept for other layouts.':flip?'Show a third flip panel for seconds':circular?'Show a third rotating ring for seconds':'Update the highlighted time every second';
+  $('dim').disabled=flip||conversational;$('brightness-help').hidden=!(flip||conversational);
+  if(conversational){lastPhrase='';tick();fit();return;}
   if(flip){flipDisplay=WordFlip.create($('word-flip'),preferences.seconds);tick();fit();return;}
   if(circular){circularDisplay=CircularClock.create($('word-circular'),preferences.seconds);tick();fit();return;}
   if(grid){
@@ -109,7 +126,7 @@ async function updateWakeLock(){
   try{wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null;});$('awake-help').textContent='Screen stays awake while the clock is visible';}catch{$('awake-help').textContent='Unavailable right now. Your device may still sleep.';}
 }
 $('settings-open').addEventListener('click',()=>{$('settings').showModal();});
-for(const key of ['seconds','color','dim','layout'])$(key).addEventListener(key==='dim'?'input':'change',()=>{preferences[key]=key==='seconds'?$(key).checked:key==='dim'?Number($(key).value):$(key).value;save();render();});
+for(const key of ['seconds','color','dim','layout','wording'])$(key).addEventListener(key==='dim'?'input':'change',()=>{preferences[key]=key==='seconds'?$(key).checked:key==='dim'?Number($(key).value):$(key).value;save();render();});
 $('awake').addEventListener('change',()=>{preferences.awake=$('awake').checked;save();updateWakeLock();});
 if(!document.fullscreenEnabled){$('fullscreen').hidden=true;}
 $('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();$('settings').close();}catch{status('Fullscreen is unavailable in this browser.');}});
