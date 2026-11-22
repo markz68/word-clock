@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <meta name="description" content="A quiet clock that tells the time in words. Works offline on your phone, tablet, and desktop.">
+  <title>Word Clock</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./clock.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="brand">Word Clock <span>v1.0.0</span></div>
+    <button id="settings-open" class="gear" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-1.7 1-2.3-.6-2.5 4.2 1.7 1.7v1.9l-1.7 1.7 2.5 4.2 2.3-.6 1.7 1 .6 2.2h5l.6-2.2 1.7-1 2.3.6 2.5-4.2-1.7-1.7v-1.9l1.7-1.7-2.5-4.2-2.3.6-1.7-1L14.5 3z"/><circle cx="12" cy="12.5" r="3.2"/></svg></button>
+  </header>
+  <main id="stage"><div id="words" aria-hidden="true"></div><p id="readable" class="sr-only" role="timer" aria-live="off"></p></main>
+  <dialog id="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="dialog-heading"><h1 id="settings-title">Settings</h1><button aria-label="Close settings" class="close">×</button></form>
+    <label class="row" for="seconds"><span>Show seconds<small>Update the highlighted time every second</small></span><input id="seconds" type="checkbox"></label>
+    <label class="row" for="color"><span>Highlight color</span><select id="color"><option value="white">White</option><option value="amber">Amber</option><option value="mint">Mint</option><option value="blue">Blue</option><option value="rose">Rose</option></select></label>
+    <label class="slider" for="dim">Inactive word brightness<input id="dim" type="range" min="25" max="65" step="1"></label>
+    <label class="row" for="awake"><span>Keep screen awake<small id="awake-help">While the clock is open and visible</small></span><input id="awake" type="checkbox"></label>
+    <div class="actions"><button id="fullscreen" type="button">Enter fullscreen</button><button id="install" type="button" hidden>Install Word Clock</button><button id="update" type="button" hidden>Update available · Restart</button></div>
+    <p id="status" role="status"></p>
+    <p class="note">Uses your device’s local time. Preferences stay on this device. Works offline after the first successful load.</p>
+    <p class="note">To install: use your browser’s Install app or Add to Home screen option. On iPhone or iPad, use Safari’s Share menu.</p>
+    <footer>Word Clock · v1.0.0</footer>
+  </dialog>
+</body>
+</html>
