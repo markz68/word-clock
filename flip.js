@@ -1,4 +1,4 @@
-/* Word Flip v1.2.0: word values and split-flap cards. */
+/* Word Flip v1.2.1: word values and split-flap cards. */
 (function(root){
   const numbers=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
   function number(n){return n<20?numbers[n]:['','','twenty','thirty','forty','fifty'][Math.floor(n/10)]+(n%10?'-'+numbers[n%10]:'');}

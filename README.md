@@ -1,6 +1,6 @@
 # Word Clock
 
-Version **1.2.0**. A responsive, installable word clock inspired by the flowing word layout in Simon Heys’s clock. Original implementation; no external fonts, libraries, or tracking.
+Version **1.2.1**. A responsive, installable word clock inspired by the flowing word layout in Simon Heys’s clock. Original implementation; no external fonts, libraries, or tracking.
 
 All words remain visible in gray; the current local time lights up. At 12:48:23 the highlighted words read “Twelve forty eight and twenty three seconds.” Noon and midnight both display Twelve. Single-digit minutes use “oh,” exact hours use “o’clock,” and zero seconds uses “precisely.”
 
@@ -30,7 +30,7 @@ Offline mode requires the browser to finish caching the app during an online vis
 
 ## Updates and troubleshooting
 
-New releases use a versioned service-worker cache and versioned script/style URLs so a new page cannot accidentally load old code. Navigation uses the current worker’s cached page, keeping offline files consistent. When an update is ready, open Settings and choose **Update available · Restart**. Fully closing all clock tabs/windows and reopening the app also allows a waiting version to activate. An initial online reload may be needed to discover an update. Releases must update the header, footer, README, asset query strings, and service-worker version together.
+New releases use a versioned service-worker cache, a versioned and validated cached page, and versioned script/style URLs so a new page cannot accidentally load old code. Navigation uses the current worker’s cached page, keeping offline files consistent. When an update is ready, open Settings and choose **Update available · Restart**. Fully closing all clock tabs/windows and reopening the app also allows a waiting version to activate. An initial online reload may be needed to discover an update. Releases must update the header, footer, README, asset query strings, and service-worker version together.
 
 If installation or offline mode fails, open the HTTPS Pages address in a regular browser tab, reconnect, and reload. Private browsing and some embedded browsers restrict these features.
 
