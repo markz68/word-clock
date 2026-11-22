@@ -1,5 +1,22 @@
+(function(){
 'use strict';
 const $=id=>document.getElementById(id);
+// Older cached pages can briefly receive a newer script during deployment.
+// Recover through the normal app update before touching newer view elements.
+if(!$('word-flip')){
+  const message=$('words');message.hidden=false;message.style.fontSize='24px';message.textContent='Updating Word Clock…';
+  if($('letter-grid'))$('letter-grid').hidden=true;
+  window.addEventListener('load',async()=>{try{
+    if(!('serviceWorker'in navigator))throw new Error('Offline updates unavailable');
+    navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});
+    const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
+    const watch=worker=>{if(!worker)return;if(worker.state==='installed')worker.postMessage('ACTIVATE_UPDATE');else worker.addEventListener('statechange',()=>{if(worker.state==='installed')worker.postMessage('ACTIVATE_UPDATE');});};
+    if(reg.waiting)reg.waiting.postMessage('ACTIVATE_UPDATE');
+    watch(reg.installing);reg.addEventListener('updatefound',()=>watch(reg.installing));
+  }catch{message.textContent='Reconnect and refresh to finish updating Word Clock.';}});
+  return;
+}
+
 const colors={white:'#ffffff',amber:'#ffc36b',mint:'#99e2bb',blue:'#9bcaff',rose:'#f4acc8'};
 let preferences={seconds:true,color:'white',dim:43,awake:false,layout:'block'};
 try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved){if(typeof saved.seconds==='boolean')preferences.seconds=saved.seconds;if(colors[saved.color])preferences.color=saved.color;if(Number.isFinite(saved.dim))preferences.dim=Math.min(65,Math.max(25,saved.dim));if(typeof saved.awake==='boolean')preferences.awake=saved.awake;}}catch{}
@@ -98,3 +115,5 @@ if('serviceWorker'in navigator){
   let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(refreshing)return;refreshing=true;location.reload();});
   $('update').addEventListener('click',()=>registration?.waiting?.postMessage('ACTIVATE_UPDATE'));
 }
+
+})();
