@@ -3,14 +3,25 @@ const $=id=>document.getElementById(id);
 const colors={white:'#ffffff',amber:'#ffc36b',mint:'#99e2bb',blue:'#9bcaff',rose:'#f4acc8'};
 let preferences={seconds:true,color:'white',dim:43,awake:false,layout:'block'};
 try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved){if(typeof saved.seconds==='boolean')preferences.seconds=saved.seconds;if(colors[saved.color])preferences.color=saved.color;if(Number.isFinite(saved.dim))preferences.dim=Math.min(65,Math.max(25,saved.dim));if(typeof saved.awake==='boolean')preferences.awake=saved.awake;}}catch{}
-try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved&&['block','grid'].includes(saved.layout))preferences.layout=saved.layout;}catch{}
+try{const saved=JSON.parse(localStorage.getItem('word-clock.preferences'));if(saved&&['block','grid','flip'].includes(saved.layout))preferences.layout=saved.layout;}catch{}
 let nodes=new Map(),gridNodes=[],lastPhrase='',wakeLock=null,installPrompt=null,registration=null,fitFrame=0;
+let flipDisplay=null,lastFlipTick=0;
 function status(message){$('status').textContent=message;}
 function save(){try{localStorage.setItem('word-clock.preferences',JSON.stringify(preferences));}catch{status('Preferences could not be saved in this browser.');}}
 function fit(){
   cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{
     const stage=$('stage'),words=$('words'),style=getComputedStyle(stage);
     const available=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+    if(preferences.layout==='flip'){
+      const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+      const count=preferences.seconds?3:2,stacked=width<available*1.1,gap=20;
+      const tileWidth=Math.max(1,stacked?Math.min(width,550,((available-(count-1)*gap)/count-30)*3):Math.min((width-(count-1)*gap)/count,520,(available-30)*3));
+      const panel=$('word-flip');panel.classList.toggle('stacked',stacked);
+      panel.style.width=(stacked?tileWidth:tileWidth*count+(count-1)*gap)+'px';
+      panel.style.gridTemplateColumns=stacked?'1fr':`repeat(${count},minmax(0,1fr))`;
+      panel.style.setProperty('--flip-height',tileWidth/3+'px');panel.style.setProperty('--flip-font',tileWidth*.105+'px');
+      return;
+    }
     if(preferences.layout==='grid'){
       const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
       $('letter-grid').style.width=Math.max(0,Math.min(width,available,900))+'px';
@@ -22,6 +33,11 @@ function fit(){
   });
 }
 function tick(){
+  if(preferences.layout==='flip'){
+    const now=new Date(),time=WordFlip.time(now.getHours(),now.getMinutes(),now.getSeconds(),preferences.seconds);
+    const stamp=now.getTime();flipDisplay.update(time,lastFlipTick!==0&&stamp-lastFlipTick<1500);lastFlipTick=stamp;
+    $('readable').textContent=time.phrase;return;
+  }
   if(preferences.layout==='grid'){
     const now=new Date(),time=LetterGrid.time(now.getHours(),now.getMinutes());
     if(time.phrase===lastPhrase)return;lastPhrase=time.phrase;
@@ -39,8 +55,12 @@ function render(){
   document.documentElement.style.setProperty('--active',colors[preferences.color]);document.documentElement.style.setProperty('--dim',preferences.dim+'%');
   $('seconds').checked=preferences.seconds;$('color').value=preferences.color;$('dim').value=preferences.dim;$('awake').checked=preferences.awake;
   const grid=preferences.layout==='grid';
-  $('layout').value=preferences.layout;$('words').hidden=grid;$('letter-grid').hidden=!grid;$('grid-help').hidden=!grid;$('seconds').disabled=grid;
-  $('seconds-help').textContent=grid?'Used in Word Block. Letter Grid shows minutes.':'Update the highlighted time every second';
+  const flip=preferences.layout==='flip';
+  if(flipDisplay){flipDisplay.destroy();flipDisplay=null;}lastFlipTick=0;
+  $('layout').value=preferences.layout;$('words').hidden=grid||flip;$('letter-grid').hidden=!grid;$('word-flip').hidden=!flip;$('grid-help').hidden=!grid;$('seconds').disabled=grid;
+  $('seconds-help').textContent=grid?'Used in Word Block and Word Flip. Letter Grid shows minutes.':flip?'Show a third flip panel for seconds':'Update the highlighted time every second';
+  $('dim').disabled=flip;$('brightness-help').hidden=!flip;
+  if(flip){flipDisplay=WordFlip.create($('word-flip'),preferences.seconds);tick();fit();return;}
   if(grid){
     const fragment=document.createDocumentFragment();gridNodes=[];
     for(const letter of LetterGrid.rows.join('')){const cell=document.createElement('span');cell.textContent=letter;gridNodes.push(cell);fragment.append(cell);}

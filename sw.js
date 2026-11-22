@@ -1,5 +1,5 @@
-const CACHE='word-clock-v1.1.0';
-const ASSETS=['./','./index.html','./styles.css?v=1.1.0','./clock.js?v=1.1.0','./grid.js?v=1.1.0','./app.js?v=1.1.0','./manifest.webmanifest','./icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png'];
+const CACHE='word-clock-v1.2.0';
+const ASSETS=['./','./index.html','./styles.css?v=1.2.0','./clock.js?v=1.2.0','./grid.js?v=1.2.0','./flip.js?v=1.2.0','./app.js?v=1.2.0','./manifest.webmanifest','./icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('word-clock-')&&key!==CACHE).map(key=>caches.delete(key))))));
 self.addEventListener('message',event=>{if(event.data==='ACTIVATE_UPDATE')self.skipWaiting();});

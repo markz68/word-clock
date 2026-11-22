@@ -1,14 +1,15 @@
 # Word Clock
 
-Version **1.1.0**. A responsive, installable word clock inspired by the flowing word layout in Simon Heys’s clock. Original implementation; no external fonts, libraries, or tracking.
+Version **1.2.0**. A responsive, installable word clock inspired by the flowing word layout in Simon Heys’s clock. Original implementation; no external fonts, libraries, or tracking.
 
 All words remain visible in gray; the current local time lights up. At 12:48:23 the highlighted words read “Twelve forty eight and twenty three seconds.” Noon and midnight both display Twelve. Single-digit minutes use “oh,” exact hours use “o’clock,” and zero seconds uses “precisely.”
 
 ## Features
 
-- Two layouts in Settings: **Word Block** (the original default) and **Letter Grid**. Layout, colors, and brightness are saved on this device.
+- Three layouts in Settings: **Word Block** (the original default), **Letter Grid**, and **Word Flip**. Layout, colors, and brightness are saved on this device.
+- Word Flip uses split-flap word panels for the hour, minute, and optional seconds. Turn **Show seconds** on or off for three or two panels. Panels stack in portrait and sit side by side in landscape, fitting the available space. Only changing values flip; the display catches up immediately after the app resumes. Device reduced-motion preferences disable the animation. At zero minutes the minute panel reads “o’clock”; single-digit minutes use “oh.” Highlight colors apply to the panel text; inactive-word brightness applies to the other two layouts.
 - Letter Grid uses a fixed 11 × 10 face. Five-minute phrases light up; zero to four dots underneath add the remaining minutes. For example, at 1:47, “IT IS QUARTER TO TWO” and two dots light up. Dots always add minutes to the phrase, including “to” phrases. Noon and midnight use TWELVE.
-- Letter Grid shows minutes only. The seconds setting is disabled in this view; your previous choice is preserved when returning to Word Block. “Precisely” belongs to Word Block only.
+- Letter Grid shows minutes only. The seconds setting is disabled in this view; your previous choice is preserved when returning to Word Block or Word Flip. Both layouts share the seconds preference. “Precisely” belongs to Word Block only.
 - Automatically fits the available width and height on portrait and landscape phones, tablets, and monitors, with no clock scrolling.
 - Top-right gear-only settings, version in the header, optional seconds, five highlight colors, adjustable inactive word brightness.
 - Optional fullscreen and screen wake lock where supported. Device power settings can prevent wake lock.
@@ -38,3 +39,5 @@ If installation or offline mode fails, open the HTTPS Pages address in a regular
 No build step. Serve this directory over localhost, for example `python3 -m http.server 8000`, then open `http://localhost:8000`. Service workers require HTTPS or localhost.
 
 Run `node tests/grid.test.cjs` to check the face spelling and all 1,440 minutes, including hour rollover and extra-minute dots.
+
+Run `node tests/flip.test.cjs` to check all 172,800 time/seconds combinations and renderer transitions, interrupted flips, reduced motion, and cleanup.
